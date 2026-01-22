@@ -466,7 +466,7 @@
         
         // Rewarded
         function showReward() {
-            const AdController = window.Adsgram.init({ blockId: "21532", debug: true });
+            const AdController = window.Adsgram.init({ blockId: "21603", debug: true });
             AdController.show().then((result) => {
                 if (result.done) {
                     addCoins(500);
@@ -479,7 +479,7 @@
 
         // Interstitial
         function showInt() {
-            const AdController = window.Adsgram.init({ blockId: "int-21535", debug: true });
+            const AdController = window.Adsgram.init({ blockId: "int-21605", debug: true });
             AdController.show().finally(() => {
                 // Просто для фана добавим немного монет за переход, хотя обычно intersitial не награждает
                 addCoins(50); 
@@ -489,7 +489,7 @@
 
         // Task List Listener
         document.addEventListener("DOMContentLoaded", () => {
-            const taskBlock = document.getElementById("my-task");
+            const taskBlock = document.getElementById("task-21606");
             if (taskBlock) {
                 taskBlock.addEventListener("reward", () => {
                     addCoins(1000);
