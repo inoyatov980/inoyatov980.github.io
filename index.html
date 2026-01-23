@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RubClicker Pro</title>
+    <title>RubArkanoid Pro</title>
     
     <!-- SDK Telegram и Adsgram -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -38,8 +38,8 @@
 
         /* --- ШАПКА --- */
         .header {
-            padding: 15px 20px;
-            background: rgba(28, 28, 30, 0.8);
+            padding: 12px 20px;
+            background: rgba(28, 28, 30, 0.95);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid #333;
             display: flex;
@@ -52,184 +52,280 @@
         .user-name { font-weight: 600; font-size: 14px; }
         .user-rank { font-size: 11px; color: var(--gold); text-transform: uppercase; margin-top: 2px; }
         
-        .balance-block { text-align: right; }
-        .balance-main { font-size: 20px; font-weight: 800; color: #fff; }
-        .balance-rub { font-size: 12px; color: var(--text-sec); font-weight: 500; }
-
+        .stats-block { 
+            display: flex;
+            gap: 20px;
+            text-align: center;
+        }
+        .stat-item { display: flex; flex-direction: column; }
+        .stat-value { font-size: 18px; font-weight: 800; color: #fff; line-height: 1; }
+        .stat-label { font-size: 10px; color: var(--text-sec); font-weight: 500; margin-top: 2px; }
+        
         /* --- ИГРОВОЕ ПОЛЕ --- */
         .game-area {
             flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #0a0a0a, #1a1a1a);
+        }
+        
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: block;
+        }
+        
+        .game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
         }
-
-        /* Эффект свечения */
-        .glow {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(255,204,0,0.15) 0%, rgba(0,0,0,0) 70%);
-            z-index: 1;
-            pointer-events: none;
+        
+        .game-title {
+            font-size: 32px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ffcc00, #ff9500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+            text-align: center;
         }
-
-        .coin {
-            width: 260px;
-            height: 260px;
-            background: radial-gradient(circle at 30% 30%, #ffd700, #ff8c00);
-            border-radius: 50%;
-            border: 8px solid #b8860b;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 120px;
-            cursor: pointer;
-            z-index: 2;
-            transition: transform 0.08s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-        }
-        .coin:active { transform: scale(0.94); }
-        .coin span { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
-
-        /* Анимация вылетающих цифр */
-        .float-num {
-            position: absolute;
-            color: #fff;
-            font-size: 28px;
-            font-weight: 800;
-            pointer-events: none;
-            animation: floatUp 1s ease-out forwards;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            z-index: 5;
-        }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-100px) scale(1.5); }
-        }
-
-        /* --- НИЖНЕЕ МЕНЮ (Шторка) --- */
-        .menu {
-            background: var(--card-bg);
-            border-radius: 24px 24px 0 0;
-            padding: 20px;
-            padding-bottom: 40px; /* Отступ под iPhone */
-            max-height: 50vh;
-            overflow-y: auto;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-            z-index: 20;
-        }
-
-        h3 {
-            margin: 0 0 15px 0;
-            font-size: 13px;
+        
+        .game-subtitle {
+            font-size: 14px;
             color: var(--text-sec);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            margin-bottom: 30px;
+            text-align: center;
+            max-width: 80%;
+        }
+        
+        .btn-start {
+            padding: 16px 40px;
+            border-radius: 16px;
+            border: none;
+            background: var(--btn-grad);
+            color: #000;
+            font-weight: 800;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 204, 0, 0.3);
+            transition: transform 0.2s;
+        }
+        
+        .btn-start:active {
+            transform: scale(0.95);
+        }
+        
+        .level-indicator {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 3;
+            border: 1px solid #333;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-
-        /* Кнопка вывода */
-        .withdraw-card {
-            background: #252528;
-            padding: 15px;
-            border-radius: 16px;
-            margin-bottom: 25px;
-            text-align: center;
-            border: 1px solid #333;
-        }
-        .withdraw-info { font-size: 13px; color: var(--text-sec); margin-bottom: 12px; }
-        .btn-withdraw {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
-            background: var(--btn-grad);
-            color: #000;
-            font-weight: 700;
-            font-size: 16px;
-            opacity: 0.5;
-            pointer-events: none;
-            transition: all 0.3s;
-        }
-        .btn-withdraw.active { opacity: 1; pointer-events: auto; box-shadow: 0 4px 15px rgba(255, 204, 0, 0.3); }
-
-        /* Сетка кнопок */
-        .grid { display: flex; gap: 10px; margin-bottom: 25px; }
-        .btn-ad {
-            flex: 1;
-            padding: 12px;
-            border-radius: 12px;
-            border: none;
-            color: white;
+        
+        .restart-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 59, 48, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
             font-weight: 600;
+            z-index: 3;
+            border: 1px solid #ff3b30;
+            color: #ff3b30;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .coin-indicator {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 3;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .upgrade-btn {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(52, 199, 89, 0.3);
+            padding: 12px 20px;
+            border-radius: 20px;
+            font-size: 28px;
+            z-index: 3;
+            border: 2px solid #34c759;
+            color: #34c759;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(52, 199, 89, 0.3);
+        }
+
+        /* --- БАННЕРНАЯ РЕКЛАМА --- */
+        .banner-ad {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background: #252528;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 4;
+            border-top: 1px solid #333;
+        }
+        
+        .ad-text {
+            font-size: 12px;
+            color: var(--text-sec);
+            text-align: center;
+            padding: 0 20px;
+        }
+        
+        .ad-btn {
+            background: var(--blue);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        /* --- ВСПЛЫВАЮЩЕЕ ОКНО ПОСЛЕ ИГРЫ --- */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        
+        .popup-box {
+            background: #1c1c1e;
+            width: 85%;
+            max-width: 320px;
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid #444;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+        
+        .popup-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--gold);
+        }
+        
+        .popup-subtitle {
+            font-size: 14px;
+            color: var(--text-sec);
+            margin-bottom: 25px;
+        }
+        
+        .popup-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            padding: 15px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+        }
+        
+        .popup-stat {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+        }
+        
+        .popup-stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--gold);
+        }
+        
+        .popup-stat-label {
+            font-size: 11px;
+            color: var(--text-sec);
+            margin-top: 5px;
+        }
+        
+        .popup-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-popup {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            font-size: 15px;
             cursor: pointer;
+            transition: transform 0.2s;
         }
-        .btn-ad small { font-weight: 400; opacity: 0.8; font-size: 11px; }
-        .bg-green { background: #34c759; }
-        .bg-blue { background: #007aff; }
-
-        /* Adsgram Task Style */
-        adsgram-task {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-            background: #252528;
-            padding: 12px 16px;
-            border-radius: 14px;
-            border: 1px solid #333;
-            --title-color: #fff;
-        }
-        .task-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; margin-right: 10px; }
-        .task-texts { display: flex; flex-direction: column; overflow: hidden; }
-        .task-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .task-rew { font-size: 12px; color: var(--gold); font-weight: 600; }
         
-        .btn-mini { padding: 6px 14px; border-radius: 8px; font-size: 12px; border: none; font-weight: 600; flex-shrink: 0; color: white; cursor: pointer;}
-        .btn-mini.blue { background: var(--blue); }
-        .btn-mini.green { background: var(--green); }
-        .btn-mini.done { background: transparent; color: var(--green); cursor: default; }
-
-        /* --- МОДАЛЬНОЕ ОКНО (Заявка) --- */
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: none; justify-content: center; align-items: center;
-            z-index: 100; backdrop-filter: blur(5px);
+        .btn-popup:active {
+            transform: scale(0.95);
         }
-        .modal-box {
-            background: #1c1c1e;
-            width: 85%;
-            border-radius: 24px;
-            padding: 25px;
-            border: 1px solid #444;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-        }
-        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; text-align: center; }
         
-        .inp-group { margin-bottom: 15px; }
-        .inp-label { font-size: 12px; color: #888; margin-bottom: 6px; display: block; margin-left: 4px;}
-        .inp-field {
-            width: 100%; padding: 14px; border-radius: 12px;
-            border: 1px solid #333; background: #2c2c2e;
-            color: #fff; font-size: 16px; outline: none; box-sizing: border-box;
+        .btn-restart-ad {
+            background: var(--blue);
+            color: white;
         }
-        .inp-field:focus { border-color: var(--blue); }
-
-        .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
-        .btn-cancel { flex: 1; padding: 14px; background: #333; border: none; border-radius: 12px; color: #fff; font-weight: 600; }
-        .btn-confirm { flex: 1; padding: 14px; background: var(--green); border: none; border-radius: 12px; color: #fff; font-weight: 600; }
+        
+        .btn-restart {
+            background: #333;
+            color: white;
+        }
 
     </style>
 </head>
@@ -241,89 +337,64 @@
             <span class="user-name" id="username">Игрок</span>
             <span class="user-rank" id="rank">Новичок</span>
         </div>
-        <div class="balance-block">
-            <div class="balance-main">🪙 <span id="balance">0</span></div>
-            <div class="balance-rub">≈ <span id="rubBalance">0</span> ₽</div>
+        <div class="stats-block">
+            <div class="stat-item">
+                <div class="stat-value" id="balance">0</div>
+                <div class="stat-label">Монеты</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="highScore">0</div>
+                <div class="stat-label">Рекорд</div>
+            </div>
         </div>
     </div>
 
-    <!-- КЛИКЕР -->
+    <!-- ИГРОВОЕ ПОЛЕ -->
     <div class="game-area">
-        <div class="glow"></div>
-        <div class="coin" id="coinBtn">
-            <span>₽</span>
+        <canvas id="gameCanvas"></canvas>
+        
+        <div class="level-indicator" id="levelIndicator" style="opacity: 0;">🎮 Уровень: <span id="currentLevel">1</span></div>
+        <div class="restart-btn" id="restartBtn" onclick="restartGameWithAd()" style="opacity: 0;">🔄 Заново</div>
+        <div class="coin-indicator" id="coinIndicator" style="opacity: 0;">🪙 <span id="gameCoins">0</span></div>
+        <div class="upgrade-btn" id="upgradeBtn" onclick="showRewardForUpgrade()" style="opacity: 0;">✨</div>
+        
+        <!-- БАННЕРНАЯ РЕКЛАМА -->
+        <div class="banner-ad" id="bannerAd" style="opacity: 0;">
+            <div class="ad-text">Смотрите видео и получайте +500 монет!</div>
+            <button class="ad-btn" onclick="showBannerAd()">Смотреть</button>
+        </div>
+        
+        <div id="startScreen" class="game-overlay">
+            <div class="game-title">RUB ARKANOID</div>
+            <div class="game-subtitle">Разбивайте блоки, зарабатывайте монеты!</div>
+            <button class="btn-start" id="startBtn">НАЧАТЬ ИГРУ</button>
         </div>
     </div>
 
-    <!-- МЕНЮ -->
-    <div class="menu">
-        
-        <!-- ВЫВОД -->
-        <h3>💸 Кошелек</h3>
-        <div class="withdraw-card">
-            <div class="withdraw-info">Минимальный вывод: 2000 монет (2 ₽)</div>
-            <button id="wBtn" class="btn-withdraw" onclick="openModal()">ВЫВЕСТИ ДЕНЬГИ</button>
-        </div>
-
-        <!-- УСИЛИТЕЛИ -->
-        <h3>⚡ Ускорители</h3>
-        <div class="grid">
-            <!-- REWARDED -->
-            <button class="btn-ad bg-green" onclick="showReward()">
-                +500 Монет
-                <small>Смотреть рекламу</small>
-            </button>
-            <!-- INTERSTITIAL -->
-            <button class="btn-ad bg-blue" onclick="showInt()">
-                +1 Уровень
-                <small>Перейти (Skip)</small>
-            </button>
-        </div>
-
-        <!-- ЗАДАНИЯ -->
-        <h3>📋 Задания</h3>
-        <adsgram-task id="my-task" data-block-id="task-21536" data-debug="true">
-            <div slot="reward" class="task-left">
-                <span style="font-size:22px">📺</span>
-                <div class="task-texts">
-                    <span class="task-title">Смотреть видео</span>
-                    <span class="task-rew">+1000 монет</span>
+    <!-- ВСПЛЫВАЮЩЕЕ ОКНО ПОСЛЕ ИГРЫ -->
+    <div id="gameOverPopup" class="popup-overlay">
+        <div class="popup-box">
+            <div class="popup-title" id="popupTitle">ИГРА ОКОНЧЕНА</div>
+            <div class="popup-subtitle" id="popupSubtitle">Вы заработали монеты</div>
+            
+            <div class="popup-stats">
+                <div class="popup-stat">
+                    <div class="popup-stat-value" id="popupCoins">0</div>
+                    <div class="popup-stat-label">Монеты</div>
+                </div>
+                <div class="popup-stat">
+                    <div class="popup-stat-value" id="popupScore">0</div>
+                    <div class="popup-stat-label">Счет</div>
+                </div>
+                <div class="popup-stat">
+                    <div class="popup-stat-value" id="popupLevel">1</div>
+                    <div class="popup-stat-label">Уровень</div>
                 </div>
             </div>
-            <div slot="button" class="btn-mini blue">Начать</div>
-            <div slot="claim" class="btn-mini green">Забрать</div>
-            <div slot="done" class="btn-mini done">Готово ✓</div>
-        </adsgram-task>
-    </div>
-
-    <!-- МОДАЛЬНОЕ ОКНО ЗАЯВКИ -->
-    <div id="modal" class="modal">
-        <div class="modal-box">
-            <div class="modal-title">Заявка на выплату</div>
             
-            <div class="inp-group">
-                <label class="inp-label">Куда вывести?</label>
-                <select id="m_type" class="inp-field">
-                    <option value="SBP">СБП (По номеру)</option>
-                    <option value="CARD">Банковская карта</option>
-                    <option value="USDT">USDT (TRC20)</option>
-                    <option value="TON">TON Wallet</option>
-                </select>
-            </div>
-
-            <div class="inp-group">
-                <label class="inp-label">Реквизиты</label>
-                <input id="m_wal" type="text" class="inp-field" placeholder="Номер карты / телефона">
-            </div>
-
-            <div class="inp-group">
-                <label class="inp-label">Сумма списания</label>
-                <input id="m_amount" type="text" class="inp-field" readonly style="color:var(--green); font-weight:bold;">
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal()">Отмена</button>
-                <button class="btn-confirm" onclick="submitWithdraw()">Вывести</button>
+            <div class="popup-actions">
+                <button class="btn-popup btn-restart" onclick="restartGame()">Играть</button>
+                <button class="btn-popup btn-restart-ad" onclick="restartWithRewardedAd()">+500 монет 🎥</button>
             </div>
         </div>
     </div>
@@ -331,25 +402,26 @@
     <script>
         // --- 1. ИНИЦИАЛИЗАЦИЯ ---
         const tg = window.Telegram.WebApp;
-        tg.expand();
-        // Красим шапку телеграма в черный
-        tg.setHeaderColor('#000000');
-        tg.setBackgroundColor('#000000');
+        if (tg) {
+            tg.expand();
+            tg.setHeaderColor('#000000');
+            tg.setBackgroundColor('#000000');
+        }
 
-        const user = tg.initDataUnsafe.user;
+        const user = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
         if (user) {
-            document.getElementById('username').innerText = user.first_name;
+            document.getElementById('username').innerText = user.first_name || 'Игрок';
         }
 
         // --- 2. БАЛАНС И ЛОГИКА ---
-        let balance = parseInt(localStorage.getItem('rubclicker_bal')) || 0;
-        const MIN_WITHDRAW = 500;
+        let balance = parseInt(localStorage.getItem('rubarkanoid_bal')) || 0;
+        let highScore = parseInt(localStorage.getItem('rubarkanoid_hs')) || 0;
+        let ballUpgradeLevel = parseInt(localStorage.getItem('rubarkanoid_upgrade')) || 1;
         
         // Элементы
         const elBal = document.getElementById('balance');
-        const elRub = document.getElementById('rubBalance');
         const elRank = document.getElementById('rank');
-        const wBtn = document.getElementById('wBtn');
+        const elHighScore = document.getElementById('highScore');
 
         updateUI();
 
@@ -359,143 +431,694 @@
         }
 
         function saveAndUpd() {
-            localStorage.setItem('rubclicker_bal', balance);
+            localStorage.setItem('rubarkanoid_bal', balance);
+            localStorage.setItem('rubarkanoid_hs', highScore);
+            localStorage.setItem('rubarkanoid_upgrade', ballUpgradeLevel);
             updateUI();
         }
 
         function updateUI() {
-            // Форматирование чисел (пробелы между тысячами: 1 000)
+            // Форматирование чисел
             elBal.innerText = balance.toLocaleString();
+            elHighScore.innerText = highScore.toLocaleString();
             
-            // Конвертация: 1000 монет = 1 рубль
-            const rub = (balance / 1000).toFixed(2);
-            elRub.innerText = rub;
-
             // Система званий
             if (balance < 5000) elRank.innerText = "Новичок";
             else if (balance < 20000) elRank.innerText = "Любитель";
             else if (balance < 100000) elRank.innerText = "Магнат";
             else elRank.innerText = "Олигарх";
             elRank.style.color = (balance > 20000) ? "#34c759" : "#ffcc00";
-
-            // Кнопка вывода
-            if (balance >= MIN_WITHDRAW) {
-                wBtn.classList.add('active');
-                wBtn.innerText = `ВЫВЕСТИ ${rub} ₽`;
-            } else {
-                wBtn.classList.remove('active');
-                wBtn.innerText = `Нужно еще ${MIN_WITHDRAW - balance} монет`;
-            }
         }
 
-        // --- 3. КЛИК ПО МОНЕТЕ ---
-        document.getElementById('coinBtn').addEventListener('touchstart', (e) => {
-            // Предотвращаем двойной клик зумом
-            e.preventDefault(); 
-            handleTap(e.touches[0].clientX, e.touches[0].clientY);
-        }, {passive: false});
-
-        document.getElementById('coinBtn').addEventListener('click', (e) => {
-             handleTap(e.clientX, e.clientY);
-        });
-
-        function handleTap(x, y) {
-            addCoins(1);
-
-            // Вибрация (самое важное для ощущения игры)
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
-            // Анимация монеты
-            const coin = document.getElementById('coinBtn');
-            coin.style.transform = "scale(0.95)";
-            setTimeout(() => coin.style.transform = "scale(1)", 80);
-
-            // Вылетающая цифра
-            const floatNum = document.createElement('div');
-            floatNum.className = 'float-num';
-            floatNum.innerText = '+1';
-            
-            // Случайный разлет
-            const randomX = (Math.random() - 0.5) * 60;
-            
-            floatNum.style.left = (x - 20 + randomX) + 'px'; // Центрируем относительно пальца
-            floatNum.style.top = (y - 50) + 'px';
-            
-            document.body.appendChild(floatNum);
-            setTimeout(() => floatNum.remove(), 1000);
-        }
-
-        // --- 4. МОДАЛЬНОЕ ОКНО ---
-        const modal = document.getElementById('modal');
-        const mAmount = document.getElementById('m_amount');
-
-        function openModal() {
-            if (balance < MIN_WITHDRAW) return;
-            mAmount.value = balance + " монет (" + (balance/1000).toFixed(2) + " ₽)";
-            modal.style.display = 'flex';
-        }
-
-        function closeModal() {
-            modal.style.display = 'none';
-        }
-
-        function submitWithdraw() {
-            const method = document.getElementById('m_type').value;
-            const wallet = document.getElementById('m_wal').value.trim();
-
-            if (wallet.length < 5) {
-                tg.showAlert("Введите корректные реквизиты!");
-                return;
-            }
-
-            // Формируем ссылку для бота
-            // withdraw__МЕТОД__КОШЕЛЕК__СУММА
-            const payload = `withdraw__${method}__${wallet}__${balance}`;
-            const botLink = `https://t.me/clicktyburn_bot?start=${payload}`;
-
-            // Списываем
-            balance = 0; 
-            saveAndUpd();
-            closeModal();
-
-            // Отправляем
-            tg.openTelegramLink(botLink);
-        }
-
-        // --- 5. РЕКЛАМА (ADSGRAM) ---
+        // --- 3. ИГРА АРКАНОИД ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const gameOverPopup = document.getElementById('gameOverPopup');
         
-        // Rewarded
-        function showReward() {
-            const AdController = window.Adsgram.init({ blockId: "21603", debug: true });
-            AdController.show().then((result) => {
-                if (result.done) {
-                    addCoins(500);
-                    tg.showAlert("Поздравляем! +500 монет начислено.");
+        // Игровые элементы
+        const levelIndicator = document.getElementById('levelIndicator');
+        const restartBtn = document.getElementById('restartBtn');
+        const coinIndicator = document.getElementById('coinIndicator');
+        const upgradeBtn = document.getElementById('upgradeBtn');
+        const bannerAd = document.getElementById('bannerAd');
+        
+        // Элементы попапа
+        const popupTitle = document.getElementById('popupTitle');
+        const popupSubtitle = document.getElementById('popupSubtitle');
+        const popupCoins = document.getElementById('popupCoins');
+        const popupScore = document.getElementById('popupScore');
+        const popupLevel = document.getElementById('popupLevel');
+        
+        let gameActive = false;
+        let gameCoins = 0;
+        let currentLevel = 1;
+        let score = 0;
+        let lives = 3;
+        
+        // Размеры игрового поля
+        let canvasWidth, canvasHeight;
+        const paddleHeight = 20;
+        const paddleWidth = 120;
+        const ballRadius = 12;
+        const brickRowCount = 3;
+        const brickColumnCount = 7;
+        const brickWidth = 70;
+        const brickHeight = 25;
+        const brickPadding = 8;
+        const brickOffsetTop = 90;
+        const brickOffsetLeft = 10;
+        
+        let paddleX;
+        let ballX, ballY;
+        let ballSpeedX, ballSpeedY;
+        
+        // Инициализация скорости мяча
+        function getBallSpeed() {
+            return 5 + (ballUpgradeLevel - 1) * 0.8;
+        }
+        
+        // Блоки
+        let bricks = [];
+        
+        // Инициализация блоков
+        function initBricks() {
+            bricks = [];
+            for (let c = 0; c < brickColumnCount; c++) {
+                bricks[c] = [];
+                for (let r = 0; r < brickRowCount; r++) {
+                    const colors = ['#ff3b30', '#ff9500', '#ffcc00'];
+                    bricks[c][r] = { 
+                        x: 0, 
+                        y: 0, 
+                        status: 1,
+                        color: colors[r % colors.length],
+                        value: (r + 1) * 15
+                    };
                 }
-            }).catch((result) => {
-                console.log(result);
-            });
+            }
         }
-
-        // Interstitial
-        function showInt() {
-            const AdController = window.Adsgram.init({ blockId: "int-21605", debug: true });
-            AdController.show().finally(() => {
-                // Просто для фана добавим немного монет за переход, хотя обычно intersitial не награждает
-                addCoins(50); 
-                tg.showAlert("Уровень повышен! (+50 монет бонусом)");
-            });
+        
+        // Обработчики событий для управления платформой
+        let isDragging = false;
+        
+        function handleTouchStart(e) {
+            e.preventDefault();
+            isDragging = true;
+            updatePaddlePosition(e.touches[0]);
         }
-
-        // Task List Listener
-        document.addEventListener("DOMContentLoaded", () => {
-            const taskBlock = document.getElementById("task-21606");
-            if (taskBlock) {
-                taskBlock.addEventListener("reward", () => {
-                    addCoins(1000);
-                    tg.showAlert("Задание выполнено! +1000 монет.");
+        
+        function handleTouchMove(e) {
+            if (!gameActive || !isDragging) return;
+            e.preventDefault();
+            updatePaddlePosition(e.touches[0]);
+        }
+        
+        function handleTouchEnd() {
+            isDragging = false;
+        }
+        
+        function handleMouseMove(e) {
+            if (!gameActive) return;
+            updatePaddlePosition(e);
+        }
+        
+        function updatePaddlePosition(event) {
+            const rect = canvas.getBoundingClientRect();
+            let relativeX = event.clientX - rect.left;
+            
+            // Ограничиваем положение платформы
+            relativeX = Math.max(paddleWidth/2, Math.min(canvasWidth - paddleWidth/2, relativeX));
+            paddleX = relativeX - paddleWidth/2;
+        }
+        
+        // Изменение размера канваса
+        function resizeCanvas() {
+            const gameArea = document.querySelector('.game-area');
+            canvasWidth = gameArea.clientWidth;
+            canvasHeight = gameArea.clientHeight;
+            
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            
+            // Платформа внизу, с отступом от края
+            paddleX = (canvasWidth - paddleWidth) / 2;
+            
+            console.log("Canvas размеры:", canvasWidth, canvasHeight);
+        }
+        
+        // Рисование платформы - ИСПРАВЛЕННАЯ ВЕРСИЯ
+        function drawPaddle() {
+            // Позиция платформы - ВНИЗУ экрана с отступом
+            const paddleY = canvasHeight - paddleHeight - 40; // Увеличил отступ
+            
+            // Тень платформы
+            ctx.shadowColor = 'rgba(0, 122, 255, 0.7)';
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Основная часть платформы
+            ctx.beginPath();
+            ctx.roundRect(paddleX, paddleY, paddleWidth, paddleHeight, 12);
+            
+            // Градиент для платформы
+            const gradient = ctx.createLinearGradient(
+                paddleX, paddleY, 
+                paddleX, paddleY + paddleHeight
+            );
+            gradient.addColorStop(0, '#007aff');
+            gradient.addColorStop(0.5, '#0055ff');
+            gradient.addColorStop(1, '#0033cc');
+            
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            ctx.closePath();
+            
+            // Сброс тени
+            ctx.shadowColor = 'transparent';
+            
+            // Центральная полоска для красоты
+            ctx.beginPath();
+            ctx.moveTo(paddleX + paddleWidth/2, paddleY + 3);
+            ctx.lineTo(paddleX + paddleWidth/2, paddleY + paddleHeight - 3);
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.closePath();
+            
+            // Края платформы для объема
+            ctx.beginPath();
+            ctx.roundRect(paddleX, paddleY, paddleWidth, paddleHeight, 12);
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.closePath();
+            
+            console.log("Платформа нарисована:", paddleX, paddleY, paddleWidth, paddleHeight);
+        }
+        
+        // Рисование мяча
+        function drawBall() {
+            // Тень мяча
+            ctx.shadowColor = 'rgba(255, 204, 0, 0.6)';
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            
+            if (ballUpgradeLevel > 1) {
+                // Градиент для улучшенного мяча
+                const gradient = ctx.createRadialGradient(
+                    ballX, ballY, 0,
+                    ballX, ballY, ballRadius
+                );
+                gradient.addColorStop(0, '#ffffff');
+                gradient.addColorStop(0.5, '#ffcc00');
+                gradient.addColorStop(1, '#ff9500');
+                ctx.fillStyle = gradient;
+            } else {
+                // Простой желтый мяч
+                const gradient = ctx.createRadialGradient(
+                    ballX, ballY, 0,
+                    ballX, ballY, ballRadius
+                );
+                gradient.addColorStop(0, '#ffeb3b');
+                gradient.addColorStop(1, '#ff9800');
+                ctx.fillStyle = gradient;
+            }
+            
+            ctx.fill();
+            ctx.closePath();
+            
+            // Сброс тени
+            ctx.shadowColor = 'transparent';
+        }
+        
+        // Рисование блоков
+        function drawBricks() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) {
+                        const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+                        const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        
+                        // Тень блока
+                        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                        ctx.shadowBlur = 8;
+                        ctx.shadowOffsetX = 3;
+                        ctx.shadowOffsetY = 3;
+                        
+                        // Сам блок
+                        ctx.beginPath();
+                        ctx.roundRect(brickX, brickY, brickWidth, brickHeight, 6);
+                        ctx.fillStyle = bricks[c][r].color;
+                        ctx.fill();
+                        ctx.closePath();
+                        
+                        // Сброс тени
+                        ctx.shadowColor = 'transparent';
+                        
+                        // Обводка блока
+                        ctx.beginPath();
+                        ctx.roundRect(brickX, brickY, brickWidth, brickHeight, 6);
+                        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+        
+        // Рисование интерфейса
+        function drawUI() {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`❤️ ${lives}`, 20, 40);
+            
+            ctx.textAlign = 'right';
+            ctx.fillText(`🎯 ${score}`, canvasWidth - 20, 40);
+            
+            ctx.textAlign = 'center';
+            ctx.fillText(`🪙 ${gameCoins}`, canvasWidth / 2, 40);
+            
+            // Прогресс-бар жизней
+            if (lives > 0) {
+                const barWidth = 60;
+                const barHeight = 8;
+                const barX = 20;
+                const barY = 50;
+                
+                // Фон прогресс-бара
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                
+                // Заполнение прогресс-бара
+                ctx.fillStyle = lives >= 3 ? '#34c759' : lives === 2 ? '#ffcc00' : '#ff3b30';
+                ctx.fillRect(barX, barY, barWidth * (lives / 3), barHeight);
+            }
+        }
+        
+        // Сброс мяча
+        function resetBall() {
+            ballX = canvasWidth / 2;
+            ballY = canvasHeight - 120; // Старт выше платформы
+            const speed = getBallSpeed();
+            ballSpeedX = speed * (Math.random() > 0.5 ? 1 : -1);
+            ballSpeedY = -speed;
+        }
+        
+        // Основной цикл игры
+        function gameLoop() {
+            if (!gameActive) return;
+            
+            // Очистка канваса
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Рисуем фон
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+            gradient.addColorStop(0, '#0a0a0a');
+            gradient.addColorStop(1, '#1a1a1a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Отрисовка
+            drawBricks();
+            drawBall();
+            drawPaddle(); // Платформа рисуется ПОСЛЕДНЕЙ чтобы быть поверх всего
+            drawUI();
+            
+            // Движение мяча
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+            
+            // Столкновение со стенами
+            if (ballX + ballRadius > canvasWidth || ballX - ballRadius < 0) {
+                ballSpeedX = -ballSpeedX;
+                // Вибрация
+                if (tg && tg.HapticFeedback) {
+                    tg.HapticFeedback.impactOccurred('soft');
+                }
+            }
+            
+            if (ballY - ballRadius < 0) {
+                ballSpeedY = -ballSpeedY;
+                if (tg && tg.HapticFeedback) {
+                    tg.HapticFeedback.impactOccurred('soft');
+                }
+            }
+            
+            // Столкновение с платформой
+            const paddleY = canvasHeight - paddleHeight - 40;
+            
+            if (
+                ballY + ballRadius > paddleY &&
+                ballY - ballRadius < paddleY + paddleHeight &&
+                ballX > paddleX &&
+                ballX < paddleX + paddleWidth
+            ) {
+                // Угол отскока зависит от того, куда попал мяч
+                const hitPoint = (ballX - (paddleX + paddleWidth / 2)) / (paddleWidth / 2);
+                ballSpeedX = hitPoint * 7;
+                ballSpeedY = -Math.abs(ballSpeedY);
+                
+                // Корректируем позицию мяча, чтобы не застрял в платформе
+                ballY = paddleY - ballRadius;
+                
+                // Вибрация
+                if (tg && tg.HapticFeedback) {
+                    tg.HapticFeedback.impactOccurred('light');
+                }
+                
+                // Бонус за отскок
+                gameCoins += 1;
+                document.getElementById('gameCoins').innerText = gameCoins;
+            }
+            
+            // Проигрыш (мяч упал)
+            if (ballY - ballRadius > canvasHeight) {
+                lives--;
+                if (lives <= 0) {
+                    gameOver(false);
+                    return;
+                } else {
+                    resetBall();
+                    if (tg && tg.HapticFeedback) {
+                        tg.HapticFeedback.impactOccurred('medium');
+                    }
+                }
+            }
+            
+            // Столкновение с блоками
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    const brick = bricks[c][r];
+                    if (brick.status === 1) {
+                        if (
+                            ballX > brick.x &&
+                            ballX < brick.x + brickWidth &&
+                            ballY > brick.y &&
+                            ballY < brick.y + brickHeight
+                        ) {
+                            // Определяем, с какой стороны столкновение
+                            const ballLeft = ballX - ballRadius;
+                            const ballRight = ballX + ballRadius;
+                            const ballTop = ballY - ballRadius;
+                            const ballBottom = ballY + ballRadius;
+                            
+                            const brickLeft = brick.x;
+                            const brickRight = brick.x + brickWidth;
+                            const brickTop = brick.y;
+                            const brickBottom = brick.y + brickHeight;
+                            
+                            // Определяем направление отскока
+                            const fromLeft = ballRight - brickLeft;
+                            const fromRight = brickRight - ballLeft;
+                            const fromTop = ballBottom - brickTop;
+                            const fromBottom = brickBottom - ballTop;
+                            
+                            // Находим минимальное проникновение
+                            const minX = Math.min(fromLeft, fromRight);
+                            const minY = Math.min(fromTop, fromBottom);
+                            
+                            if (minX < minY) {
+                                ballSpeedX = -ballSpeedX;
+                            } else {
+                                ballSpeedY = -ballSpeedY;
+                            }
+                            
+                            brick.status = 0;
+                            score += brick.value;
+                            
+                            gameCoins += brick.value;
+                            document.getElementById('gameCoins').innerText = gameCoins;
+                            
+                            if (tg && tg.HapticFeedback) {
+                                tg.HapticFeedback.impactOccurred('light');
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Проверка на завершение уровня
+            let allDestroyed = true;
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) allDestroyed = false;
+                }
+            }
+            
+            if (allDestroyed) {
+                levelComplete();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Завершение уровня
+        function levelComplete() {
+            const levelBonus = 150 * currentLevel;
+            gameCoins += levelBonus;
+            document.getElementById('gameCoins').innerText = gameCoins;
+            
+            currentLevel++;
+            document.getElementById('currentLevel').innerText = currentLevel;
+            
+            // Увеличение скорости
+            const speedIncrease = 1.1;
+            ballSpeedX *= speedIncrease;
+            ballSpeedY *= speedIncrease;
+            
+            resetBall();
+            initBricks();
+            
+            if (tg) {
+                tg.showAlert(`🎉 Уровень ${currentLevel-1} пройден! +${levelBonus} монет`);
+            }
+        }
+        
+        // Конец игры
+        function gameOver(isWin) {
+            gameActive = false;
+            
+            // Обновляем рекорд
+            if (score > highScore) {
+                highScore = score;
+            }
+            
+            // Начисляем монеты
+            const totalEarned = gameCoins;
+            addCoins(totalEarned);
+            
+            // Убираем прозрачность с игровых элементов
+            levelIndicator.style.opacity = '0';
+            restartBtn.style.opacity = '0';
+            coinIndicator.style.opacity = '0';
+            upgradeBtn.style.opacity = '0';
+            bannerAd.style.opacity = '0';
+            
+            // Показываем попап
+            showGameOverPopup(isWin, totalEarned);
+            
+            // Вибрация
+            if (tg && tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('heavy');
+            }
+        }
+        
+        // Показать попап после игры
+        function showGameOverPopup(isWin, earnedCoins) {
+            popupTitle.innerText = isWin ? "🎉 ПОБЕДА!" : "💀 ИГРА ОКОНЧЕНА";
+            popupSubtitle.innerText = isWin ? 
+                `Вы прошли уровень ${currentLevel}!` : 
+                `Вы заработали ${earnedCoins} монет`;
+            popupCoins.innerText = earnedCoins;
+            popupScore.innerText = score;
+            popupLevel.innerText = currentLevel;
+            
+            gameOverPopup.style.display = 'flex';
+        }
+        
+        // Начало игры
+        function startGame() {
+            console.log("Запуск игры...");
+            
+            // Скрываем стартовый экран
+            startScreen.style.display = 'none';
+            gameOverPopup.style.display = 'none';
+            
+            // Убираем прозрачность с игровых элементов
+            levelIndicator.style.opacity = '1';
+            restartBtn.style.opacity = '1';
+            coinIndicator.style.opacity = '1';
+            upgradeBtn.style.opacity = '1';
+            bannerAd.style.opacity = '1';
+            
+            // Устанавливаем размеры
+            resizeCanvas();
+            
+            // Сбрасываем игровые переменные
+            gameActive = true;
+            score = 0;
+            lives = 3;
+            gameCoins = 0;
+            currentLevel = 1;
+            
+            document.getElementById('gameCoins').innerText = gameCoins;
+            document.getElementById('currentLevel').innerText = currentLevel;
+            
+            // Инициализация
+            resetBall();
+            initBricks();
+            
+            // Добавляем обработчики
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            
+            // Запускаем игровой цикл
+            console.log("Игра начата! Платформа внизу экрана");
+            gameLoop();
+        }
+        
+        // Перезапуск игры
+        function restartGame() {
+            console.log("Перезапуск игры");
+            gameOverPopup.style.display = 'none';
+            startGame();
+        }
+        
+        // Перезапуск с рекламой
+        function restartWithRewardedAd() {
+            console.log("Перезапуск с рекламой");
+            
+            if (window.Adsgram) {
+                const AdController = window.Adsgram.init({ blockId: "21603", debug: true });
+                AdController.show().then((result) => {
+                    if (result.done) {
+                        addCoins(500);
+                        if (tg) tg.showAlert("+500 монет начислено!");
+                        restartGame();
+                    }
+                }).catch((error) => {
+                    console.log("Ошибка рекламы:", error);
+                    restartGame();
+                });
+            } else {
+                console.log("Adsgram не доступен");
+                restartGame();
+            }
+        }
+        
+        // Перезапуск через кнопку "Заново"
+        function restartGameWithAd() {
+            console.log("Кнопка 'Заново' нажата");
+            
+            if (gameActive) {
+                if (confirm("Перезапустить игру?")) {
+                    if (window.Adsgram) {
+                        const AdController = window.Adsgram.init({ blockId: "21603", debug: true });
+                        AdController.show().then((result) => {
+                            if (result.done) {
+                                addCoins(300);
+                                if (tg) tg.showAlert("+300 монет за перезапуск!");
+                                gameOver(false);
+                            }
+                        }).catch((error) => {
+                            console.log("Ошибка рекламы:", error);
+                            gameOver(false);
+                        });
+                    } else {
+                        gameOver(false);
+                    }
+                }
+            } else {
+                startGame();
+            }
+        }
+        
+        // Улучшение мяча
+        function showRewardForUpgrade() {
+            console.log("Улучшение мяча");
+            
+            if (window.Adsgram) {
+                const AdController = window.Adsgram.init({ blockId: "21603", debug: true });
+                AdController.show().then((result) => {
+                    if (result.done) {
+                        ballUpgradeLevel++;
+                        addCoins(200);
+                        saveAndUpd();
+                        if (tg) tg.showAlert(`✨ Мяч улучшен до уровня ${ballUpgradeLevel}! +200 монет`);
+                        
+                        if (gameActive) {
+                            const speed = getBallSpeed();
+                            const ratioX = ballSpeedX / Math.abs(ballSpeedX);
+                            const ratioY = ballSpeedY / Math.abs(ballSpeedY);
+                            ballSpeedX = speed * ratioX;
+                            ballSpeedY = speed * ratioY;
+                        }
+                    }
+                }).catch((error) => {
+                    console.log("Ошибка рекламы:", error);
                 });
             }
+        }
+        
+        // Баннерная реклама
+        function showBannerAd() {
+            console.log("Баннерная реклама");
+            
+            if (window.Adsgram) {
+                const AdController = window.Adsgram.init({ blockId: "21603", debug: true });
+                AdController.show().then((result) => {
+                    if (result.done) {
+                        addCoins(500);
+                        if (tg) tg.showAlert("+500 монет начислено!");
+                    }
+                }).catch((error) => {
+                    console.log("Ошибка рекламы:", error);
+                });
+            }
+        }
+
+        // --- 4. ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ ---
+        window.addEventListener('load', function() {
+            console.log("Страница загружена");
+            
+            // Добавляем обработчик для кнопки старта
+            startBtn.addEventListener('click', startGame);
+            
+            // Инициализация Canvas
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Добавляем поддержку roundRect
+            if (!CanvasRenderingContext2D.prototype.roundRect) {
+                CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                    if (w < 2 * r) r = w / 2;
+                    if (h < 2 * r) r = h / 2;
+                    this.beginPath();
+                    this.moveTo(x + r, y);
+                    this.arcTo(x + w, y, x + w, y + h, r);
+                    this.arcTo(x + w, y + h, x, y + h, r);
+                    this.arcTo(x, y + h, x, y, r);
+                    this.arcTo(x, y, x + w, y, r);
+                    this.closePath();
+                    return this;
+                };
+            }
+            
+            // Показываем баланс
+            updateUI();
         });
 
     </script>
